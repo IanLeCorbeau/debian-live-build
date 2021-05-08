@@ -1,0 +1,3 @@
+#!/bin/bash
+
+udisksctl power-off -b $(lsblk -lp | awk '/part/ {print $1, "(" $4 ")"}' | dmenu -p poweroff)

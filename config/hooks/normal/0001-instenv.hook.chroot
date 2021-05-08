@@ -1,0 +1,48 @@
+#!/bin/sh
+
+dmenu() {
+	cd /etc/skel/.local/src/dmenu || exit
+	make
+	make clean install
+}
+
+dwm() {
+	cd /etc/skel/.local/src/dwm || exit
+	make
+	make clean install
+}
+
+firewall() {
+	ufw enable
+}
+
+st() {
+	cd /etc/skel/.local/src/st || exit
+	make
+	make clean install
+}
+
+permissions() {
+	cd /etc/skel/.local/bin/ || exit
+	chmod +x chwall-dmenu mpvload netcon netdiscon poweroffreboot statusbar.sh usbmount usbunmount usbpoweroff
+}
+
+#unzipfa() {
+#	cd /etc/skel/.local/share/fonts || exit
+#	unzip fontawesome.zip
+#}
+
+userdirs() {
+	xdg-user-dirs-update
+}
+
+main() {
+	dmenu
+	dwm
+	st
+	permissions
+	firewall
+	userdirs
+}
+
+main

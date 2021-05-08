@@ -1,0 +1,73 @@
+#
+# wm independent hotkeys
+#
+
+# terminal emulator
+#alt + Return
+#	/usr/local/bin/st
+
+# program launcher
+#alt + p
+#	dmenu_run -p Run
+
+# make sxhkd reload its configuration files:
+super + Escape
+	pkill -USR1 -x sxhkd
+
+#
+# Volume Control
+#
+
+XF86AudioRaiseVolume
+	amixer -M -q sset Master 5%+ && pkill -RTMIN+10 dwmblocks
+
+XF86AudioLowerVolume
+	amixer -M -q sset Master 5%- && pkill -RTMIN+10 dwmblocks
+
+XF86AudioMute
+	pactl set-sink-mute 0 toggle && pkill -RTMIN+10 dwmblocks
+
+#
+# Open Apps in Terminal
+#
+alt + shift + {f, t, c}
+	st -e {vifm, vim, calcurse} 
+
+#
+# dmenu shortcuts
+#
+
+# connect / disconnect networks
+alt + n
+	~/.local/bin/netcon
+
+alt + shift + n
+	~/.local/bin/netdiscon
+
+# Mount/Unmount/poweroff Devices
+alt + shift + m
+	~/.local/bin/usbmount
+
+alt + shift + u
+	~/.local/bin/usbunmount
+
+alt + shift + p
+	~/.local/bin/usbpoweroff
+
+# Poweroff / Reboot
+alt + shift + l
+	~/.local/bin/poweroffreboot
+
+# Open Videos with mpv (from browser)
+alt + shift + v
+	~/.local/bin/mpvload
+
+# Change Wallpaper
+alt + shift + w
+	~/.local/bin/chwall-dmenu
+
+# Take Screenshot
+Print
+	scrot ~/Pictures/screenshot-%Y-%m-%d-%T.png
+
+

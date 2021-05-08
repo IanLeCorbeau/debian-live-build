@@ -1,0 +1,4 @@
+#!/bin/sh
+
+udisksctl mount -b $(lsblk -lp | awk '/part/ {print $1, "(" $4 ")"}' | dmenu -p mount)
+
