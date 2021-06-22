@@ -19,13 +19,13 @@ super + Escape
 #
 
 XF86AudioRaiseVolume
-	amixer -M -q sset Master 5%+ && pkill -RTMIN+10 dwmblocks
+	amixer -M -q sset Master 5%+
 
 XF86AudioLowerVolume
-	amixer -M -q sset Master 5%- && pkill -RTMIN+10 dwmblocks
+	amixer -M -q sset Master 5%-
 
 XF86AudioMute
-	pactl set-sink-mute 0 toggle && pkill -RTMIN+10 dwmblocks
+	pactl set-sink-mute 0 toggle
 
 #
 # Open Apps in Terminal
