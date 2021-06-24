@@ -3,12 +3,12 @@
 #
 
 # terminal emulator
-#alt + Return
-#	/usr/local/bin/st
+alt + Return
+	/usr/local/bin/st
 
 # program launcher
-#alt + p
-#	dmenu_run -p Run
+alt + p
+	dmenu_run -p Run
 
 # make sxhkd reload its configuration files:
 super + Escape
