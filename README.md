@@ -24,7 +24,13 @@ mkdir .build/deb-live
 cd .build/deb-live  
 
 **Config command**  
-lb config -d buster --debian-installer live --debian-installer-distribution buster --debian-installer-gui false --archive-areas "main contrib non-free" --debootstrap-options "--variant=minbase"  
+lb config -d bullseye --debian-installer none --archive-areas "main contrib non-free" --debootstrap-options "--variant=minbase"  
+
+```
+Note: removed the installer, as I don't like installating live ISOs. To re-add the installer,  
+change the "none" option in "--debian-installer" with cdrom, netinst, netboot, businesscard  
+or live.
+```
 
 **Copy all files and configs**  
 cd out of .build/deb-live  
