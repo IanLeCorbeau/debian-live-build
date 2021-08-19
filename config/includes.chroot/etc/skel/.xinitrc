@@ -50,7 +50,7 @@ fi
 
 #xrandr --output Virtual1 --mode 1360x768
 xwallpaper --stretch ~/Pictures/defwall.jpg &
-compton -b &
+xcompmgr &
 dunst &
 lxpolkit &
 sxhkd &
