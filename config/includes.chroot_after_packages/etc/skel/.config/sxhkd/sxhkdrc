@@ -6,6 +6,10 @@
 alt + Return
 	/usr/local/bin/st
 
+# Xterm
+alt + shift + Return
+	xterm
+
 # program launcher
 alt + p
 	dmenu_run -p Run
@@ -25,13 +29,16 @@ XF86AudioLowerVolume
 	amixer -M -q sset Master 5%-
 
 XF86AudioMute
-	pactl set-sink-mute 0 toggle
+	amixer set master mute
 
 #
 # Open Apps in Terminal
 #
-alt + shift + {f, t, c}
-	st -e {vifm, vim, calcurse} 
+alt + shift + {r, t, c, f}
+	st -e {ranger, vim, calcurse, vifm} 
+
+alt + m
+	st -e mutt
 
 #
 # dmenu shortcuts
@@ -58,16 +65,37 @@ alt + shift + p
 alt + shift + l
 	~/.local/bin/poweroffreboot
 
+# Open Image with sxiv
+alt + i
+	~/.local/bin/openimage
+
+# Open Videos with mpv (from vid folder)
+alt + v
+	~/.local/bin/openvideo
+
 # Open Videos with mpv (from browser)
 alt + shift + v
 	~/.local/bin/mpvload
+
+# Switch Monitors (via dmenu)
+alt + shift + s
+	~/.local/bin/monitor
 
 # Change Wallpaper
 alt + shift + w
 	~/.local/bin/chwall-dmenu
 
+#
+# Misc
+#
+
 # Take Screenshot
 Print
 	scrot ~/Pictures/screenshot-%Y-%m-%d-%T.png
 
+# Switch Monitor
+super + alt + shift + p
+	/usr/bin/xrandr --output DP-1 --primary --mode 1920x1080 --output HDMI-1 --off
 
+super + alt + shift + t
+	/usr/bin/xrandr --output HDMI-1 --primary --mode 1360x768 --output DP-1 --off

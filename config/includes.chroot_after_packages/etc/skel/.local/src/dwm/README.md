@@ -2,14 +2,17 @@ Personal build of Suckless' dwm (Dynamic Window Manager)
 
 ### Applied Patches
   * [Fullgaps](https://dwm.suckless.org/patches/fullgaps/)
+  * [Bottomstack](https://dwm.suckless.org/patches/bottomstack/) (with gaps)
+  * [Rightmaster]() (with gaps)
   * [Pertag](https://dwm.suckless.org/patches/pertag/)
   * [Rotatestack](https://dwm.suckless.org/patches/rotatestack/)
   * [Titlecolor](https://dwm.suckless.org/patches/titlecolor/)
 
 #### Other modifications
   * No spawn function. Dmenu, st and any other program needs to be launched via sxhkd or xbindkeys (etc).
-  * Option to adjust the status bar's height
-  * Floating windows always open in the center of the screen
+  * Gaps in Monocle mode.
+  * Option to adjust the status bar's height.
+  * Floating windows always open in the center of the screen.
 
 _Unfortunately, I don't remember where I got the code for the status bar height and the centered floating windows, but if I ever do, I'll give proper credit._
 
