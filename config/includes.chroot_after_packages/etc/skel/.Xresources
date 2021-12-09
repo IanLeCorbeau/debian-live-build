@@ -1,14 +1,3 @@
-!! DWM Theming
-dwm.normbodercolor: #444444
-dwm.normbgcolor: #222222
-dwm.normfgcolor: #bbbbbb
-dwm.selbordercolor: #5294E2
-dwm.selbgcolor: #5294E2
-dwm.selffgcolor: #eeeeee
-dwm.titlebordercolor: #5294E2 
-dwm.titlebgcolor: #242424
-dwm.titlefgcolor: #eeeeee
-
 !! Terminal (ST) Theming
 
 !! Transparency (0-1):

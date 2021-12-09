@@ -4,36 +4,42 @@ dmenu() {
 	cd /etc/skel/.local/src/dmenu || exit
 	make
 	make clean install
+	make clean
 }
 
 dwm() {
 	cd /etc/skel/.local/src/dwm || exit
 	make
 	make clean install
-}
-
-firewall() {
-	ufw enable
+	make clean
 }
 
 st() {
 	cd /etc/skel/.local/src/st || exit
 	make
 	make clean install
+	make clean
 }
 
 permissions() {
 	cd /etc/skel/.local/bin/ || exit
-	chmod +x chwall-dmenu mpvload netcon netdiscon poweroffreboot statusbar.sh usbmount usbunmount usbpoweroff
+	chmod +x addwifi.sh chwall-dmenu mpvload netcon poweroffreboot statusbar.sh usbmount usbunmount usbpoweroff
 }
 
-#unzipfa() {
-#	cd /etc/skel/.local/share/fonts || exit
-#	unzip fontawesome.zip
-#}
+install_perms() {
+	cd /etc/skel/ || exit
+	chmod +x install.sh
+}
 
-userdirs() {
-	xdg-user-dirs-update
+setup_wheel() {
+	sed -i '15 s/^# //' /etc/pam.d/su
+	addgroup --system wheel
+	touch /etc/doas.conf
+	echo "permit :wheel" > /etc/doas.conf
+}
+
+firewall() {
+	ufw enable
 }
 
 main() {
@@ -41,8 +47,9 @@ main() {
 	dwm
 	st
 	permissions
+	install_perms
 	firewall
-	userdirs
+	setup_wheel
 }
 
 main

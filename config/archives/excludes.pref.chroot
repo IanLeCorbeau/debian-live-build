@@ -1,0 +1,3 @@
+Package: sudo
+Pin: version *
+Pin-Priority: -1

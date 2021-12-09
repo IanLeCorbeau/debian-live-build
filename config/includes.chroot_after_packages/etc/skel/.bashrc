@@ -112,7 +112,7 @@ if ! shopt -oq posix; then
   fi
 fi
 
-export PATH=$PATH:.local/bin
+export PATH=$PATH:.local/bin:/sbin:/usr/sbin:/usr/local/sbin
 
 export EDITOR=vim
 export VISUAL=vim
