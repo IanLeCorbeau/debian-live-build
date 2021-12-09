@@ -20,3 +20,5 @@ printf "Your wpa key (will not echo): "
 read -s PW
 printf '%s\n' "wpa-psk \"$PW\"" >> /etc/network/interfaces.d/"$IF"
 echo
+printf '%s\n' "Locking down file for security"
+chmod 0600 /etc/network/interfaces.d/"$IF"
