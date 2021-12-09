@@ -40,4 +40,7 @@ run: .local/src/debian-live-build/deploy.sh
 cd .build/deb-live  
 sudo lb build  
 
+## Iso Notes
+* The resulting iso uses doas instead of sudo.
+* Password for doas: live
 
