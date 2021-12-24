@@ -26,10 +26,10 @@ permissions() {
 	chmod +x addwifi.sh chwall-dmenu mpvload netcon poweroffreboot statusbar.sh usbmount usbunmount usbpoweroff
 }
 
-install_perms() {
-	cd /etc/skel/ || exit
-	chmod +x install.sh
-}
+#install_perms() {
+#	cd /etc/skel/ || exit
+#	chmod +x install.sh
+#}
 
 setup_wheel() {
 	sed -i '15 s/^# //' /etc/pam.d/su
@@ -47,7 +47,7 @@ main() {
 	dwm
 	st
 	permissions
-	install_perms
+	#install_perms
 	firewall
 	setup_wheel
 }
