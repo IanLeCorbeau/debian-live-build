@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Currently useless. Needs to be reworked.
+
 repodir=.local/src/debian-live-build/config
 workdir=.build/deb-live
 

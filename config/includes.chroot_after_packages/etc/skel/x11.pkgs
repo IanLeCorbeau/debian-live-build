@@ -1,0 +1,9 @@
+xserver-xorg-core
+xinit
+x11-xserver-utils
+xdg-utils
+libx11-dev
+libxft-dev
+libxinerama-dev
+libfontconfig1-dev
+libfreetype6-dev

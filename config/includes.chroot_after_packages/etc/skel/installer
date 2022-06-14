@@ -1,0 +1,349 @@
+#!/bin/bash
+
+## installer by Ian LeCorbeau: a simple installer script written in BASH.
+
+CONF=disk.conf
+
+get_deps() {
+	printf '%s\n' "Getting installer dependencies" &&
+	apt update && apt install debootstrap arch-install-scripts -y
+}
+
+# writing to disk.conf
+d_conf() {
+	local _conf=$1 _value=$2
+	printf '%s\n' "${_conf}=${_value}" >> "$CONF"
+}
+
+# Parsing values from disk.conf
+d_read() {
+	local _conf=$1
+	grep "${_conf}" "$CONF" | cut -d '=' -f2
+}
+
+mk_disk() {
+	echo
+	printf '%s\n' "Disk partitioning. Available devices are: "
+	echo
+	lsblk -lp | awk '/disk/ { print $1, "(" $4 ")" }' | cut -d '/' -d '/' -f3
+	echo
+	read -r -p "Which disk should the system be installed on? (e.g. sdX): " disk
+	d_conf DISK "$disk"
+	echo
+	read -r -p "Will you boot in bios or EFI mode? " mode
+	d_conf MODE "$mode"
+	echo
+	printf '%s\n' "Custom partitioning schemes are not yet supported. The default scheme will be:
+a 500mb boot partition on /dev/${disk}1
+a swap partition the size of your choosing on /dev/${disk}2
+a root partition the size of your choosing on /dev/${disk}3
+a home partition on /dev/${disk}4 occupying the rest of the disk space, or the size of your choosing."
+	echo
+	read -r -p "Proceed? (all data on $disk will be deleted, so make sure you backed up anything important) (Y/n): " yesno
+	if [ "$yesno" == "no" ]; then
+		printf '%s\n' "Exiting script... Start again."
+		rm "$CONF"
+	else
+		d_conf BOOTP "$disk"1
+		d_conf SWAPP "$disk"2
+		d_conf ROOTP "$disk"3
+		d_conf HOMEP "$disk"4
+		ask_part
+	fi
+}
+
+# Asking user for size of partitions
+ask_part() {
+	echo
+	read -r -p "Choose the size of swap in GB (e.g. 4): " swaps
+	d_conf SWAPS "$swaps"
+	echo
+	read -r -p "Choose the size of root in GB (e.g. 25): " roots
+	d_conf ROOTS "$roots"
+	echo
+	read -r -p "Choose the size of home in GB (leave blank to fill the rest of the disk): " homes
+	if [ -z "$homes" ]; then
+		: # do nothing
+	else
+		d_conf HOMES "$homes"
+	fi
+}
+
+# Partitioning disk and running mkfs.
+mk_part() {
+	local _disk _mode _swaps _roots _homes
+	_disk=$(d_read DISK)
+	_mode=$(d_read MODE)
+	_swaps=$(d_read SWAPS)
+	_roots=$(d_read ROOTS)
+	_homes=$(d_read HOMES)
+	echo
+	printf '%s\n' "Partitioning /dev/$_disk."
+	sfdisk --delete /dev/"$_disk"
+	partprobe /dev/"$_disk" && sleep 1
+	if [ "$_mode" == "bios" ]; then
+		(echo o) | fdisk /dev/"$_disk"
+		(echo n; echo p; echo 1; echo 2048; echo +500M; echo w) | fdisk /dev/"$_disk"
+		sfdisk -A /dev/"$_disk" 1
+	else
+		(echo g) | fdisk /dev/"$_disk"
+		(echo n; echo p; echo 1; echo 2048; echo +500M; echo w) | fdisk /dev/"$_disk"
+		fdisk --part-type /dev/"$_disk" 1 EF
+	fi
+	(echo n; echo p; echo 2; echo ; echo +"$_swaps"G; echo w) | fdisk /dev/"$_disk"
+	sfdisk --part-type /dev/"$_disk" 2 82
+	(echo n; echo p; echo 3; echo ; echo +"$_roots"G; echo w) | fdisk /dev/"$_disk"
+	if [ -z "$_homes" ]; then
+		(echo n; echo p; echo 4; echo ; echo ; echo w) | fdisk /dev/"$_disk"
+	else
+		(echo n; echo p; echo 5; echo ; echo +"$_homes"G; echo w) | fdisk /dev/"$_disk"
+	fi
+
+	partprobe /dev/"$_disk" && sleep 1
+	printf '%s\n' "Creating Partitions on /dev/$_disk" && sleep 1
+	if [ "$_mode" == "bios" ]; then
+		mkfs.ext4 /dev/"$_disk"1
+	else
+		mkfs.fat -F 32 /dev/"$_disk"1
+	fi
+	mkswap /dev/"$_disk"2
+	swapon /dev/"$_disk"2
+	mkfs.ext4 /dev/"$_disk"3
+	mkfs.ext4 /dev/"$_disk"4
+
+	printf '%s\n' "Mounting Partitions" && sleep 1
+	mount /dev/"$_disk"3 /mnt
+	mkdir -p /mnt/home
+	mount /dev/"$_disk"4 /mnt/home
+	if [ "$_mode" == "bios" ]; then
+		mkdir -p /mnt/boot
+		mount /dev/"$_disk"1 /mnt/boot
+	else
+		mkdir -p /mnt/boot/efi
+		mount /dev/"$_disk"1 /mnt/boot/efi
+	fi
+}
+
+bootstrap() {
+	echo
+	printf '%s\n' "Deboostraping base system" && sleep 1
+	/usr/sbin/debootstrap --exclude=debconf-i18n,nano,tasksel-data,whiptail --include=doas,openntpd,mandoc,vim,tmux,build-essential,git bullseye /mnt http://deb.debian.org/debian/
+}
+
+gen_fstab() {
+	echo
+	printf '%s\n' "Generating fstab..." && sleep 1
+	genfstab -U /mnt >> /mnt/etc/fstab
+}
+
+apt_src_list() {
+	echo
+	printf '%s\n' "Generating /etc/apt/sources.list" && sleep 1
+	printf '%s\n' "deb http://deb.debian.org/debian/ bullseye main contrib non-free
+deb-src http://deb.debian.org/debian/ bullseye main contrib non-free
+
+deb http://security.debian.org/debian-security bullseye-security main contrib non-free
+deb-src http://security.debian.org/debian-security bullseye-security main contrib non-free
+
+deb http://deb.debian.org/debian/ bullseye-updates main contrib non-free
+deb-src http://deb.debian.org/debian/ bullseye-updates main contrib non-free" > /mnt/etc/apt/sources.list
+}
+
+apt_update() {
+	echo
+	printf '%s\n' "Updating apt..."
+	arch-chroot /mnt apt update
+	arch-chroot /mnt apt upgrade -y
+}
+
+cp_files() {
+	mkdir -p /mnt/etc/network/
+	cp /etc/network/interfaces /mnt/etc/network/interfaces
+	cp /etc/skel/{.bash_aliases,.bashrc,.profile} /mnt/etc/skel/
+	cp /etc/skel/.bash_aliases /mnt/root/
+}
+
+initsys() {
+	echo
+	read -r -p "Preparing to install kernel and init... Which init system to use? (choice: systemd, sysvinit or openrc): " initsys
+	case "$initsys" in
+		sysvinit) arch-chroot /mnt apt install linux-image-amd64 sysvinit-core elogind libpam-elogind \
+			orphan-sysvinit-scripts systemctl -y ;;
+		openrc) arch-chroot /mnt apt install linux-image-amd64 sysvinit-core openrc elogind libpam-elogind \
+			orphan-sysvinit-scripts systemctl procps -y ;;
+		*) arch-chroot /mnt apt install linux-image-amd64 -y ;; # do nothing
+	esac	
+}
+
+timezone() {
+	echo
+	printf '%s\n' "Setting timezone..." && sleep 1
+	arch-chroot /mnt dpkg-reconfigure tzdata
+}
+
+set_hostname() {
+	echo
+	read -r -p "Hostname for this machine: " hostname
+	echo "$hostname" > /etc/hosts
+	cat <<EOF > /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	$hostname
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+EOF
+}
+
+locales() {
+	sleep 1 && echo
+	printf "Setting locale..." && sleep 1
+	arch-chroot /mnt apt install locales -y
+	arch-chroot /mnt dpkg-reconfigure locales
+}
+
+xkb_cons() {
+	sleep 1 && echo
+	printf "Setting up console... "
+	arch-chroot /mnt apt install console-setup keyboard-configuration -y
+}
+
+set_pass() {
+	echo
+	printf '%s\n' "Enter password for the root account (will not echo)"
+	arch-chroot /mnt passwd
+	printf '%s\n' "Root password set. You may wish to disable the root account with passwd -l later on."
+}
+
+set_wheel() {
+	echo
+	printf '%s\n' "Setting up wheel group" && sleep 1
+	sed -i '15 s/^# //' /mnt/etc/pam.d/su
+	arch-chroot /mnt addgroup --system wheel
+	echo "permit :wheel" > /mnt/etc/doas.conf
+}
+
+set_default_user() {
+	echo
+	read -r -p "Enter the name of default user: " name
+	arch-chroot /mnt useradd -m "$name"
+	printf '%s\n' "Password for $name (will not echo):"
+	arch-chroot /mnt passwd "$name"
+	arch-chroot /mnt usermod -aG wheel,cdrom,floppy,audio,dip,video,plugdev,netdev "$name"
+	arch-chroot /mnt usermod -s /bin/bash "$name"
+}
+
+# ask the user to choose extra packages (or not)
+pkg_sets() {
+	read -r -p "By default, only a base system is installed. You can choose extra \"sets\" for a more complete installation.
+	The choices are:
+
+1) Base only (no extra packages, still includes vim + tmux)
+2) Base + X11 (inclues: xserver-xorg-core, xinit, dwm, st and dmenu+scripts)
+3) Base + X11 + Userland (extras: vifm, mutt, mpv, newsboat, calcurse, dunst, zathura ...)
+
+Select by entering corresponding number (defaults to 1): " choice
+	case "$choice" in
+		1) ;; # do nothing, base is already installed
+		2) arch-chroot /mnt xargs apt install <x11.pkgs -y 
+			inst_suckless_base ;;
+		3) arch-chroot /mnt xargs apt install <x11.pkgs -y 
+			arch-chroot /mnt xargs apt install <userland.pkgs -y
+			inst_suckless_base
+			ask_dots ;;
+		*) ;; # same as 1
+	esac
+}
+
+inst_suckless_base() {
+	echo
+	printf '%s\n' "Building custom suckless tools..." && sleep 1
+	mkdir -p /mnt/etc/skel/.local/
+	cp -r .local/src /mnt/etc/skel/.local/
+	arch-chroot /mnt /bin/bash <<"EOT"
+cd /etc/skel/.local/src/dwm
+make
+make clean install
+EOT
+
+	arch-chroot /mnt /bin/bash <<"EOT"
+cd /etc/skel/.local/src/dmenu
+make
+make clean install
+EOT
+
+	arch-chroot /mnt /bin/bash <<"EOT"
+cd /etc/skel/.local/src/st
+make
+make clean install
+EOT
+}
+
+ask_dots() {
+	read -r -p "Do you wish to install the dotfiles from this live iso onto your system? (Y/n): " yn
+	case "$yn" in
+		n) ;; # do nothing
+		*) set_dots ;;
+	esac
+}
+
+set_dots() {
+	echo
+	printf '%s\n' "Setting up user dotfiles..."
+	cp -r /etc/skel /mnt/etc/
+	rm /mnt/etc/skel/install.sh
+	chmod +x /mnt/etc/skel/.local/bin/{chwall-dmenu,mpvload,poweroffreboot,usbmount,usbpoweroff,usbunmount}
+}
+
+setup_grub() {
+	local _mode _disk
+	echo
+	printf '%s\n' "seting up the GRUB bootloader..."
+	_mode=$(d_read MODE)
+	_disk=$(d_read DISK)
+	if [ "$_mode" == "bios" ]; then
+		arch-chroot /mnt apt install grub-pc -y
+		arch-chroot /mnt grub-install /dev/"$_disk"
+		arch-chroot /mnt update-grub
+	else
+		arch-chroot /mnt apt install grub-efi-amd64 -y
+		arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi
+		arch-chroot /mnt update-grub
+	fi
+}
+
+finish() {
+	read -r -p "Installation finished. R to reboot, E to exit and continue in the live environment.
+> " re
+	case "$re" in
+		R) reboot ;;
+		E) exit ;;
+		*) ;;
+	esac
+}
+
+do_install() {
+	printf '%s\n' "Launching the installer..."
+	get_deps
+	mk_disk
+	mk_part
+	bootstrap
+	gen_fstab
+	apt_src_list
+	apt_update
+	cp_files
+	initsys
+	timezone
+	set_hostname
+	locale
+	xkb_cons
+	set_pass
+	set_wheel
+	set_default_user
+	pkg_sets
+	setup_grub
+	finish
+}
+
+do_install

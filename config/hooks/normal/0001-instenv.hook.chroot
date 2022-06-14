@@ -28,7 +28,7 @@ permissions() {
 
 install_perms() {
 	cd /etc/skel/ || exit
-	chmod +x install.sh
+	chmod +x installer
 }
 
 setup_wheel() {
