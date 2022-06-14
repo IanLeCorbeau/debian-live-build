@@ -23,13 +23,11 @@ mkdir .build/deb-live
 **Change Dir**  
 cd .build/deb-live  
 
-**Config command**  
+**Simple Config command (example)**  
 lb config -d bullseye --debian-installer none --archive-areas "main contrib non-free" --debootstrap-options "--variant=minbase"  
 
 ```
-Note: removed the installer, as I don't like installating live ISOs. To re-add the installer,  
-change the "none" option in "--debian-installer" with cdrom, netinst, netboot, businesscard  
-or live.
+The iso in Release is built using the build.sh script
 ```
 
 **Copy all files and configs**  
