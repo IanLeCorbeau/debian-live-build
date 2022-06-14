@@ -25,7 +25,7 @@ mk_disk() {
 	echo
 	printf '%s\n' "Disk partitioning. Available devices are: "
 	echo
-	lsblk -lp | awk '/disk/ { print $1, "(" $4 ")" }' | cut -d '/' -d '/' -f3
+	lsblk -lp | awk '/disk/ { print $1, "(" $4 ")" }' | cut -d '/' -f3
 	echo
 	read -r -p "Which disk should the system be installed on? (e.g. sdX): " disk
 	d_conf DISK "$disk"
