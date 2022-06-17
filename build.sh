@@ -25,7 +25,7 @@ conf() {
 		--checksums sha512 \
 		--image-name deb-dwm-live-"$(date +"%Y%m%d")" \
 		--archive-areas "main contrib non-free" \
-		--debootstrap-options "--exclude=debconf-i18n,nano,tasksel-data,whiptail" \
+		--debootstrap-options "--variant=minbase" \
 		--bootappend-live "boot=live slab_nomerge init_on_alloc=1 init_on_free=1 page_alloc.shuffle=1 pti=on randomize_kstack_offset=on vsyscall=none debugfs=off lockdown=confidentiality"
 }
 
@@ -54,7 +54,6 @@ do_rebuild() {
 	/usr/bin/doas lb clean
 	lb config
 	/usr/bin/doas lb build
-	gen_sums_sig
 }
 
 gen_sums_sig() {
@@ -74,7 +73,8 @@ gen_sums_sig() {
 # No arguments provided assumes we want to deploy and build the iso from scratch.
 case "$1" in
 	-c) do_deploy ;;
-	-r) do_rebuild ;;
+	-r) do_rebuild
+		gen_sums_sig ;;
 	*) do_deploy
 		do_build
 		gen_sums_sig ;;

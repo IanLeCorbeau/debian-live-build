@@ -172,7 +172,7 @@ initsys() {
 			orphan-sysvinit-scripts systemctl -y ;;
 		openrc) arch-chroot /mnt apt install linux-image-amd64 sysvinit-core openrc elogind libpam-elogind \
 			orphan-sysvinit-scripts systemctl procps -y ;;
-		*) arch-chroot /mnt apt install linux-image-amd64 systemd systemd-sysv libpam-systemd libsystemd0 -y ;; # the default for now.
+		*) arch-chroot /mnt apt install linux-image-amd64 systemd systemd-sysv libpam-systemd libsystemd0 -y ;;
 	esac	
 }
 
