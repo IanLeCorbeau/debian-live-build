@@ -184,8 +184,8 @@ timezone() {
 set_hostname() {
 	echo
 	read -r -p "Hostname for this machine: " hostname
-	echo "$hostname" > /etc/hosts
-	cat <<EOF > /etc/hosts
+	echo "$hostname" > /mnt/etc/hosts
+	cat <<EOF > /mnt/etc/hosts
 127.0.0.1	localhost
 127.0.1.1	$hostname
 
