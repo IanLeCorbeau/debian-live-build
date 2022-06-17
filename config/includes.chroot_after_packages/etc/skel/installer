@@ -127,7 +127,7 @@ mk_part() {
 bootstrap() {
 	echo
 	printf '%s\n' "Deboostraping base system" && sleep 1
-	/usr/sbin/debootstrap --exclude=debconf-i18n,nano,tasksel-data,whiptail --include=doas,openntpd,mandoc,vim,tmux,build-essential,git bullseye /mnt http://deb.debian.org/debian/
+	/usr/sbin/debootstrap --variant=minbase bullseye /mnt http://deb.debian.org/debian/
 }
 
 gen_fstab() {
@@ -167,12 +167,17 @@ initsys() {
 	echo
 	read -r -p "Preparing to install kernel and init... Which init system to use? (choice: systemd, sysvinit or openrc): " initsys
 	case "$initsys" in
+		systemd) arch-chroot /mnt apt install linux-image-amd64 systemd systemd-sysv libpam-systemd libsystemd0 -y ;;
 		sysvinit) arch-chroot /mnt apt install linux-image-amd64 sysvinit-core elogind libpam-elogind \
 			orphan-sysvinit-scripts systemctl -y ;;
 		openrc) arch-chroot /mnt apt install linux-image-amd64 sysvinit-core openrc elogind libpam-elogind \
 			orphan-sysvinit-scripts systemctl procps -y ;;
-		*) arch-chroot /mnt apt install linux-image-amd64 -y ;; # do nothing
+		*) arch-chroot /mnt apt install linux-image-amd64 systemd systemd-sysv libpam-systemd libsystemd0 -y ;; # the default for now.
 	esac	
+}
+
+install_base() {
+	arch_chroot /mnt xargs apt install --no-install-recommends -y <base.pkgs
 }
 
 timezone() {
@@ -334,6 +339,7 @@ do_install() {
 	apt_update
 	cp_files
 	initsys
+	install_base
 	timezone
 	set_hostname
 	locale

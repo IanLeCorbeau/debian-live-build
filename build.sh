@@ -74,7 +74,7 @@ gen_sums_sig() {
 # No arguments provided assumes we want to deploy and build the iso from scratch.
 case "$1" in
 	-c) do_deploy ;;
-	-r) do_build -rebuild ;;
+	-r) do_rebuild ;;
 	*) do_deploy
 		do_build
 		gen_sums_sig ;;
