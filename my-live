@@ -1,0 +1,165 @@
+#!/bin/bash
+
+echo '.Ricorda di stilare la lista dei pacchetti installati con i driver radeon scaricati e messi sul sito'
+echo '.Prendere i pacchetti della lista e schiaffarli nella build '
+
+
+<<_
+ToDO: da completare
+aggiungi un tema di grub
+aggiungi custom sources.list
+aggiungi custom package
+aggiungi custom scripts
+aggiungi apt preferences
+banna pacchetti che non vuoi
+_
+
+
+<<_
+#--------------------------------------------------------------------------
+# lb config crea alberatura, questo è lo spiegone
+#----------------------------------------------------------------------------
+├── auto                        #main live-build configuration
+├── config
+│   ├── archives                #package mirrors/repositories
+│   ├── hooks                   #extra scripts to run during build stages
+│   ├── includes.binary         #files to include on the ISO filesystem
+│   ├── includes.chroot         #files to include in the live system's filesystem
+│   ├── includes.installer      #files to include in the installer's filesystem
+│   ├── package-lists
+│   │   └── *.list.chroot		#packages to install on the live system
+│   │   └── *.list.binary		#packages to place in the APT repository on the ISO image
+│   ├── packages.chroot         #standalone .deb packages to install on the live system
+│   └── task-lists              #tasksel tasks to install on the live system
+├── doc			                #user documentation
+├── Makefile	                #main automation, dependencies management, ...
+└── scripts		                #extra automation scripts
+_
+
+
+# Installazione dipendenze
+HOMELIVE=$(pwd)
+LIST=(live-build live-config live-boot-initramfs-tools live-boot-initramfs-tools)
+
+for i in ${LIST[@]}
+ do
+   if [[ -z $(dpkg-query -l | grep $i) ]]; then
+	sudo apt install  \
+	--no-install-recommends -y $i
+  fi
+done
+
+#
+# Se la cartekka non esiste
+#
+if [ ! -d live ]; then
+     mkdir live; cd live
+ else 
+     cd live
+fi
+
+HOMELIVE=$(pwd)
+echo ---------------------------
+echo "clean previous build"
+echo --------------------------
+echo "lb clean"
+lb clean
+
+echo ---------------------------
+echo "run live config"
+echo --------------------------
+lb config   --distribution bullseye \
+            --distribution-chroot \
+            --cache true \
+            --apt-indices true \
+            --apt-secure false \
+            --backports false \
+            --cache-indices true \
+            --cache-packages true \
+            --image-name alkaid_live.iso \
+            --mode debian \
+            --binary-images iso \
+            --architectures amd64 \
+            --compression lzip \
+            --memtest none \
+            --security false \
+            --system live \
+            --uefi-secure-boot true
+            --archive-areas "main contrib non-free" \
+            --debian-installer-gui "true"  \
+            --debian-installer "live" \
+            --mirror-bootstrap http://ftp.debian.org/debian/ \
+            --mirror-binary http://ftp.debian.org/debian \
+            --bootappend-live "boot=live components \
+                                timezone=Europe/Rome \
+                                locales=en_GB.UTF-8 \
+                                keyboard-layouts=it \
+                                hostname=alkaid \
+                                username=alkaid \
+                                noeject \
+                                autologin"  \
+                                    "${@}"
+
+
+# Inserisci i pacchetti che vuoi installare nella tua iso
+<<__
+echo "
+live-boot
+openssh-server
+youtube-dl
+slim
+mate-desktop-environment
+#lightdm
+#lightdm-gtk-greeter
+#lightdm-settings
+x11-xserver-utils
+xorg
+xorg-docs-core
+xserver-common
+xserver-xorg
+xserver-xorg-core
+xserver-xorg-input-all
+xserver-xorg-input-kbd
+xserver-xorg-input-libinput
+xserver-xorg-input-multitouch
+xserver-xorg-input-synaptics
+xserver-xorg-input-wacom
+xserver-xorg-legacy
+xserver-xorg-video-all
+xserver-xorg-video-amdgpu
+xserver-xorg-video-ati
+xserver-xorg-video-cirrus
+xserver-xorg-video-fbdev
+xserver-xorg-video-intel
+xserver-xorg-video-mga
+xserver-xorg-video-nouveau
+xserver-xorg-video-qxl
+xserver-xorg-video-radeon
+xserver-xorg-video-vesa
+xserver-xorg-video-vmware " > config/package-lists/live.list.chroot 
+__
+
+
+# Inserisci i pacchetti che vuoi installare nella tua iso
+echo "
+calamares
+calamares-settings-debian
+live-task-extra
+live-task-base
+live-tools
+live-boot
+live-config-systemd
+live-config-sysvinit
+live-task-localisation
+live-task-recommended
+live-boot-initramfs-tools
+xserver-xorg" > config/package-lists/live.list.chroot
+
+
+# serve parte che tira giù i pacchetti che mi servono e che non si trovano
+# in debian server es: mintstick; o mate e li mette in
+#
+#sudo cp -r /usr/share/live/build/bootloaders/isolinux bootloaders/
+
+cd $HOMELIVE 
+lb build --verbose --debug >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
